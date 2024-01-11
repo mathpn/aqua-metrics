@@ -6,6 +6,7 @@ import polars as pl
 import requests
 from airflow.decorators import dag, task
 from airflow.operators.python import PythonOperator
+from airflow.providers.sqlite.hooks.sqlite import SqliteHook
 
 schema = {
     "STN": pl.String,
@@ -40,6 +41,8 @@ def extract_latest_observations():
         re.sub(r"\s+", ";", line) for line in res.content.decode("utf-8").splitlines()
     )
     buffer = StringIO(data)
+    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    print(uri)
 
     df = pl.read_csv(
         buffer,
@@ -48,7 +51,13 @@ def extract_latest_observations():
         null_values=["MM"],
         schema=schema,
     )
-    return "foo bar"
+
+    df = df.with_columns(
+        [pl.datetime("YY", "MM", "DD", "hh", "mm", 0).alias("timestamp")]
+    ).drop(["YY", "MM", "DD", "hh", "mm"])
+
+    df.write_database(table_name="realtime_data", connection=uri, if_table_exists="replace")
+    return f"written dataframe with shape {df.shape} to database"
 
 
 @dag(
