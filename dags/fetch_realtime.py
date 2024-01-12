@@ -56,7 +56,9 @@ def extract_latest_observations():
         [pl.datetime("YY", "MM", "DD", "hh", "mm", 0).alias("timestamp")]
     ).drop(["YY", "MM", "DD", "hh", "mm"])
 
-    df.write_database(table_name="realtime_data", connection=uri, if_table_exists="replace")
+    df = df.with_columns([pl.lit(datetime.now()).alias("ingestion_ts")])
+
+    df.write_database(table_name="realtime_data", connection=uri, if_table_exists="append")
     return f"written dataframe with shape {df.shape} to database"
 
 
