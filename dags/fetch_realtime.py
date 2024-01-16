@@ -6,6 +6,7 @@ import polars as pl
 import requests
 from airflow.decorators import dag, task
 from airflow.operators.python import PythonOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
 
 schema = {
@@ -73,7 +74,12 @@ def extract_latest_observations():
     tags=["realtime"],
 )
 def fetch_realtime():
-    out = extract_latest_observations()
+    extract_latest_observations()
+    SQLExecuteQueryOperator(
+        task_id="fill_stations",
+        sql="sql/insert_stations.sql",
+        conn_id="aqua_metrics_sqlite",
+    )
 
 
 fetch_realtime()
