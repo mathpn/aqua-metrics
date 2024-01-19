@@ -5,10 +5,11 @@ from io import StringIO
 import polars as pl
 import requests
 from airflow.decorators import dag, task
+from airflow.exceptions import AirflowSkipException
 from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
-
+from sqlalchemy import MetaData, Table, and_, create_engine, select
 
 schema = {
     "YY": pl.Int64,
@@ -34,15 +35,21 @@ schema = {
 
 
 @task()
-def extract_station_history(station: str):
+def extract_history(station: str) -> None:
+    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+
     res = requests.get(f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt")
     # TODO refactor to function
-    data = "\n".join(
-        re.sub(r"\s+", ";", line) for line in res.content.decode("utf-8").splitlines()
-    )
+    data = res.content.decode("utf-8")
+
+    if data.startswith("<!DOCTYPE HTML"):
+        raise AirflowSkipException(
+            f"skipping station {station}: HTML returned instead of CSV"
+        )
+
+    data = "\n".join(re.sub(r"\s+", ";", line) for line in data.splitlines())
 
     buffer = StringIO(data)
-    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
 
     df = pl.read_csv(
         buffer,
@@ -61,7 +68,19 @@ def extract_station_history(station: str):
     df.write_database(
         table_name="history_data", connection=uri, if_table_exists="append"
     )
-    return f"written dataframe with shape {df.shape} to database"
+
+
+@task()
+def list_stations():
+    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    engine = create_engine(uri)
+
+    metadata = MetaData()
+    table = Table("stations", metadata, autoload=True, autoload_with=engine)
+    stmt = select(table.c.station_code).limit(5) # XXX limit
+
+    with engine.connect() as conn:
+        return [row[0] for row in conn.execute(stmt)]
 
 
 @dag(
@@ -72,7 +91,8 @@ def extract_station_history(station: str):
     tags=["realtime"],
 )
 def fetch_history():
-    extract_station_history("42040")
+    stations = list_stations()
+    out = extract_history.expand(station=stations)
 
 
 fetch_history()
