@@ -77,7 +77,7 @@ def list_stations():
 
     metadata = MetaData()
     table = Table("stations", metadata, autoload=True, autoload_with=engine)
-    stmt = select(table.c.station_code).limit(5) # XXX limit
+    stmt = select(table.c.station_code).limit(5)
 
     with engine.connect() as conn:
         return [row[0] for row in conn.execute(stmt)]
@@ -92,7 +92,15 @@ def list_stations():
 )
 def fetch_history():
     stations = list_stations()
-    out = extract_history.expand(station=stations)
+    extract = extract_history.expand(station=stations)
 
+    latest_history = SQLExecuteQueryOperator(
+        task_id="latest_history",
+        sql="sql/latest_history.sql",
+        conn_id="aqua_metrics_sqlite",
+        trigger_rule="all_done",
+    )
+
+    extract >> latest_history
 
 fetch_history()
