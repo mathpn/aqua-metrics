@@ -89,7 +89,7 @@ def list_stations():
     dag_id="fetch_history",
     start_date=datetime(2024, 1, 1),
     catchup=False,
-    schedule=timedelta(minutes=15),
+    schedule=timedelta(hours=6),
     tags=["realtime"],
 )
 def fetch_history():
@@ -99,6 +99,8 @@ def fetch_history():
     latest_history = SQLExecuteQueryOperator(
         task_id="latest_history",
         sql="sql/latest_history.sql",
+        split_statements=True,
+        autocommit=False,
         conn_id="aqua_metrics_sqlite",
         trigger_rule="all_done",
     )
