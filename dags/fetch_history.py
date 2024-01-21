@@ -63,7 +63,9 @@ def extract_history(station: str) -> None:
         [pl.datetime("YY", "MM", "DD", "hh", "mm", 0).alias("timestamp")]
     ).drop(["YY", "MM", "DD", "hh", "mm"])
 
+    # TODO foreign key
     df = df.with_columns([pl.lit(datetime.now()).alias("ingestion_ts")])
+    df = df.with_columns([pl.lit(station).alias("station_code")])
 
     df.write_database(
         table_name="history_data", connection=uri, if_table_exists="append"
@@ -77,7 +79,7 @@ def list_stations():
 
     metadata = MetaData()
     table = Table("stations", metadata, autoload=True, autoload_with=engine)
-    stmt = select(table.c.station_code).limit(5)
+    stmt = select(table.c.station_code).limit(5) # XXX
 
     with engine.connect() as conn:
         return [row[0] for row in conn.execute(stmt)]
