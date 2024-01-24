@@ -90,7 +90,7 @@ def list_stations():
     start_date=datetime(2024, 1, 1),
     catchup=False,
     schedule=timedelta(hours=6),
-    tags=["realtime"],
+    tags=["history"],
 )
 def fetch_history():
     stations = list_stations()
