@@ -60,7 +60,7 @@ def extract_history(station: str) -> None:
     )
 
     df = df.with_columns(
-        [pl.datetime("YY", "MM", "DD", "hh", "mm", 0).alias("timestamp")]
+        [pl.datetime("YY", "MM", "DD", "hh", "mm", 0).alias("timestamp").cast(pl.Utf8)]
     ).drop(["YY", "MM", "DD", "hh", "mm"])
 
     # TODO foreign key
