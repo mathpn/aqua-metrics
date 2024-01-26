@@ -7,9 +7,8 @@ import numpy as np
 import pandas as pd
 from plotnine import *
 from scipy.stats import zscore
-from statsmodels.tsa.seasonal import seasonal_decompose
-from statsmodels.tsa.seasonal import STL
 from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.tsa.seasonal import STL, seasonal_decompose
 
 # %%
 
@@ -71,4 +70,7 @@ df_deseasonalized.head()
     + aes(x="timestamp", y="detrended_z")
     + geom_line()
 )
+# %%
+
+current = df_deseasonalized.iloc[-1]["detrended_z"]
 # %%

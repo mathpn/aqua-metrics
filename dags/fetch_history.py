@@ -10,6 +10,7 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
 from sqlalchemy import MetaData, Table, and_, create_engine, select
+from common import list_stations
 
 schema = {
     "YY": pl.Int64,
@@ -72,19 +73,6 @@ def extract_history(station: str) -> None:
     )
 
 
-@task()
-def list_stations():
-    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
-    engine = create_engine(uri)
-
-    metadata = MetaData()
-    table = Table("stations", metadata, autoload=True, autoload_with=engine)
-    stmt = select(table.c.station_code).limit(5) # XXX
-
-    with engine.connect() as conn:
-        return [row[0] for row in conn.execute(stmt)]
-
-
 @dag(
     dag_id="fetch_history",
     start_date=datetime(2024, 1, 1),
@@ -106,5 +94,6 @@ def fetch_history():
     )
 
     extract >> latest_history
+
 
 fetch_history()
