@@ -5,7 +5,6 @@ from io import StringIO
 import polars as pl
 import requests
 from airflow.decorators import dag, task
-from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
 
@@ -37,7 +36,9 @@ schema = {
 
 @task()
 def extract_latest_observations():
-    res = requests.get("https://www.ndbc.noaa.gov/data/latest_obs/latest_obs.txt")
+    res = requests.get(
+        "https://www.ndbc.noaa.gov/data/latest_obs/latest_obs.txt", timeout=15
+    )
     data = "\n".join(
         re.sub(r"\s+", ";", line) for line in res.content.decode("utf-8").splitlines()
     )

@@ -6,10 +6,8 @@ import polars as pl
 import requests
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowSkipException
-from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
-from sqlalchemy import MetaData, Table, and_, create_engine, select
 from common import list_stations
 
 schema = {
@@ -39,7 +37,9 @@ schema = {
 def extract_history(station: str) -> None:
     uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
 
-    res = requests.get(f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt")
+    res = requests.get(
+        f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt", timeout=15
+    )
     # TODO refactor to function
     data = res.content.decode("utf-8")
 
