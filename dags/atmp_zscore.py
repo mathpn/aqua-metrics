@@ -1,18 +1,12 @@
-import re
 from datetime import datetime, timedelta
-from io import StringIO
 
 import pandas as pd
-import requests
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowSkipException
-from airflow.operators.python import PythonOperator
-from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
-from sqlalchemy import MetaData, Table, and_, create_engine, select
-from statsmodels.tsa.seasonal import STL
 from scipy.stats import zscore
-
+from sqlalchemy import MetaData, Table, create_engine, select
+from sqlalchemy.dialects.sqlite import insert
+from statsmodels.tsa.seasonal import STL
 
 from common import list_stations
 
@@ -30,11 +24,10 @@ def calculate_atmp_zsore(station: str):
         .where(table.c.ATMP != None)
     )
 
-    print(station)
     df = pd.read_sql_query(stmt, engine, params={"station_code": station})
 
     if df.empty:
-        return None
+        return
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df = df.set_index("timestamp").sort_index()
@@ -52,9 +45,16 @@ def calculate_atmp_zsore(station: str):
         df_deseasonalized["deseasonalized"] - df_deseasonalized["trend"]
     )
     df_deseasonalized["detrended_z"] = zscore(df_deseasonalized["detrended"])
-    print(df_deseasonalized.tail())
 
-    return df_deseasonalized["detrended_z"].iloc[-1]
+    zscore_table = Table("z_scores", metadata, autoload=True, autoload_with=engine)
+
+    z_score = df_deseasonalized["detrended_z"].iloc[-1]
+    insert_stmt = insert(
+        zscore_table, values={"station_code": station, "ATMP": z_score}
+    ).on_conflict_do_update(index_elements=["station_code"], set_={"ATMP": z_score})
+
+    with engine.begin() as conn:
+        conn.execute(insert_stmt)
 
 
 @dag(
@@ -65,8 +65,8 @@ def calculate_atmp_zsore(station: str):
     tags=["history"],
 )
 def fetch_history():
-    # stations = list_stations()
-    extract = calculate_atmp_zsore.expand(station=["41038"])
+    stations = list_stations()
+    calculate_atmp_zsore.expand(station=stations)
 
 
 fetch_history()
