@@ -7,5 +7,8 @@ CREATE TABLE IF NOT EXISTS stations (
 
 CREATE TABLE IF NOT EXISTS z_scores (
     station_code TEXT PRIMARY KEY,
-    "ATMP" FLOAT
+    "WSPD" FLOAT,
+    "ATMP" FLOAT,
+    "PRES" FLOAT,
+    "WVHT" FLOAT
 );

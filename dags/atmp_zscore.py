@@ -66,7 +66,16 @@ def calculate_atmp_zsore(station: str, column: str):
 )
 def fetch_history():
     stations = list_stations()
-    calculate_atmp_zsore.expand(station=stations)
+    calculate_atmp_zsore.expand(
+        station=stations,
+        # station=["41009"],
+        column=[
+            "WSPD",
+            "ATMP",
+            "PRES",
+            "WVHT",
+        ],
+    )
 
 
 fetch_history()
