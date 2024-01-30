@@ -8,8 +8,20 @@ from airflow.decorators import dag, task
 from airflow.exceptions import AirflowSkipException
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
-from common import list_stations
+from sqlalchemy import MetaData, Table, create_engine, select
 
+
+@task()
+def list_stations():
+    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    engine = create_engine(uri)
+
+    metadata = MetaData()
+    table = Table("stations", metadata, autoload=True, autoload_with=engine)
+    stmt = select(table.c.station_code)
+
+    with engine.connect() as conn:
+        return [row[0] for row in conn.execute(stmt)]
 schema = {
     "YY": pl.Int64,
     "MM": pl.Int64,

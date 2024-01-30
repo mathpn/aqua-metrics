@@ -4,11 +4,22 @@ import pandas as pd
 from airflow.decorators import dag, task
 from airflow.providers.sqlite.hooks.sqlite import SqliteHook
 from scipy.stats import zscore
-from sqlalchemy import MetaData, Table, create_engine, select
+from sqlalchemy import MetaData, Table, create_engine, distinct, select
 from sqlalchemy.dialects.sqlite import insert
 from statsmodels.tsa.seasonal import STL
 
-from common import list_stations
+
+@task()
+def list_stations():
+    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    engine = create_engine(uri)
+
+    metadata = MetaData()
+    table = Table("latest_history", metadata, autoload=True, autoload_with=engine)
+    stmt = select(distinct(table.c.station_code))
+
+    with engine.connect() as conn:
+        return [row[0] for row in conn.execute(stmt)]
 
 
 @task()
