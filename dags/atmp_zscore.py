@@ -12,16 +12,16 @@ from common import list_stations
 
 
 @task()
-def calculate_atmp_zsore(station: str):
+def calculate_atmp_zsore(station: str, column: str):
     uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
     engine = create_engine(uri)
 
     metadata = MetaData()
     table = Table("latest_history", metadata, autoload=True, autoload_with=engine)
     stmt = (
-        select(table.c.timestamp, table.c.ATMP)
+        select(table.c.timestamp, table.c[column])
         .where(table.c.station_code == station)
-        .where(table.c.ATMP != None)
+        .where(table.c[column] != None)  # != None required by SQLAlchemy
     )
 
     df = pd.read_sql_query(stmt, engine, params={"station_code": station})
@@ -39,7 +39,7 @@ def calculate_atmp_zsore(station: str):
     df_deseasonalized = df.join(result.seasonal)
     df_deseasonalized = df_deseasonalized.join(result.trend)
     df_deseasonalized["deseasonalized"] = (
-        df_deseasonalized["ATMP"] - df_deseasonalized["season"]
+        df_deseasonalized[column] - df_deseasonalized["season"]
     )
     df_deseasonalized["detrended"] = (
         df_deseasonalized["deseasonalized"] - df_deseasonalized["trend"]
@@ -50,8 +50,8 @@ def calculate_atmp_zsore(station: str):
 
     z_score = df_deseasonalized["detrended_z"].iloc[-1]
     insert_stmt = insert(
-        zscore_table, values={"station_code": station, "ATMP": z_score}
-    ).on_conflict_do_update(index_elements=["station_code"], set_={"ATMP": z_score})
+        zscore_table, values={"station_code": station, column: z_score}
+    ).on_conflict_do_update(index_elements=["station_code"], set_={column: z_score})
 
     with engine.begin() as conn:
         conn.execute(insert_stmt)
