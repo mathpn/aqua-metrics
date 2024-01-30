@@ -22,6 +22,8 @@ def list_stations():
 
     with engine.connect() as conn:
         return [row[0] for row in conn.execute(stmt)]
+
+
 schema = {
     "YY": pl.Int64,
     "MM": pl.Int64,
