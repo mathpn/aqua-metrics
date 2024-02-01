@@ -9,23 +9,23 @@ import streamlit as st
 st.title("Buoy data dashboard")
 
 
-def load_data(conn: sqlite3.Connection):
+def load_data(conn: sqlite3.Connection, metric: str):
     df = pd.read_sql_query(
-        """
-        SELECT LAT, LON, ATMP
+        f"""
+        SELECT LAT, LON, {metric} 
         FROM realtime_data
         WHERE ingestion_ts = (SELECT MAX(ingestion_ts) FROM realtime_data)
-        AND ATMP IS NOT NULL
+        AND {metric} IS NOT NULL
         """,
         conn,
     )
     return df
 
 
-def load_ascore_atmp_data(conn: sqlite3.Connection):
+def load_ascore_atmp_data(conn: sqlite3.Connection, metric: str):
     df = pd.read_sql_query(
-        """
-        SELECT lat, lon, ATMP
+        f"""
+        SELECT lat, lon, {metric} 
         FROM z_scores AS t1
         JOIN stations AS t2
         ON t1.station_code = t2.station_code
@@ -35,48 +35,62 @@ def load_ascore_atmp_data(conn: sqlite3.Connection):
     return df
 
 
+METRIC_NAMES = {
+    "WSPD": "Wind speed (m/s)",
+    "ATMP": "Atmospheric pressure",
+    "PRES": "Sea level pressure (hPa)",
+    "WVHT": "Significant wave height (meters)",
+}
 
-conn = sqlite3.connect("file:data/database.db?mode=ro", uri=True)
 
-df = load_data(conn)
-print(df.sample(10))
+def main():
+    conn = sqlite3.connect("file:data/database.db?mode=ro", uri=True)
 
-st.subheader("Atmospheric temperature")
+    metric = st.selectbox("Choose a metric", METRIC_NAMES.keys(), index=1)
 
-df["size"] = 10
-fig = px.scatter_mapbox(
-    df,
-    lat="LAT",
-    lon="LON",
-    color="ATMP",
-    opacity=0.5,
-    color_continuous_scale="viridis",
-    size="size",
-    zoom=1,
-)
+    df = load_data(conn, metric)
+    print(df.sample(10))
 
-fig.update_layout(mapbox_style="carto-darkmatter", mapbox_center_lon=0)
-fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    st.subheader(METRIC_NAMES[metric])
 
-st.plotly_chart(fig)
+    df["size"] = 10
+    fig = px.scatter_mapbox(
+        df,
+        lat="LAT",
+        lon="LON",
+        color=metric,
+        opacity=0.5,
+        color_continuous_scale="viridis",
+        size="size",
+        zoom=1,
+    )
 
-df_zscore = load_ascore_atmp_data(conn)
-df_zscore["ATMP"] = df_zscore["ATMP"].round(2)
-print(df_zscore)
+    fig.update_layout(mapbox_style="carto-darkmatter", mapbox_center_lon=0)
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
-df_zscore["size"] = 10
-fig = px.scatter_mapbox(
-    df_zscore,
-    lat="lat",
-    lon="lon",
-    color="ATMP",
-    opacity=0.5,
-    color_continuous_scale="viridis",
-    size="size",
-    zoom=1,
-)
+    st.plotly_chart(fig)
 
-fig.update_layout(mapbox_style="carto-darkmatter", mapbox_center_lon=0)
-fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    df_zscore = load_ascore_atmp_data(conn, metric)
+    df_zscore[metric] = df_zscore[metric].round(2)
+    print(df_zscore)
 
-st.plotly_chart(fig)
+    df_zscore["size"] = 10
+    fig = px.scatter_mapbox(
+        df_zscore,
+        lat="lat",
+        lon="lon",
+        color=metric,
+        opacity=0.5,
+        color_continuous_scale="viridis",
+        size="size",
+        zoom=1,
+    )
+
+    fig.update_layout(mapbox_style="carto-darkmatter", mapbox_center_lon=0)
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+    st.plotly_chart(fig)
+
+
+if __name__ == "__main__":
+    main()
