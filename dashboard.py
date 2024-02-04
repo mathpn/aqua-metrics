@@ -8,8 +8,6 @@ import streamlit as st
 from sqlalchemy import MetaData, Table, create_engine, select
 from sqlalchemy.sql import functions as func
 
-st.title("Buoy data dashboard")
-
 
 def load_data(conn, metadata, metric: str) -> pd.DataFrame:
     realtime_table = Table("realtime_data", metadata, autoload_with=conn)
@@ -29,7 +27,7 @@ def load_ascore_atmp_data(conn, metadata, metric: str) -> pd.DataFrame:
     station_table = Table("stations", metadata, autoload_with=conn)
 
     stmt = select(
-        station_table.c.lat, station_table.c.lon, z_scores_table.c[metric]
+        station_table.c.lat, station_table.c.lon, z_scores_table.c[metric].label("z-score")
     ).join(station_table, z_scores_table.c.station_code == station_table.c.station_code)
     return pd.read_sql(stmt, conn)
 
@@ -52,6 +50,7 @@ def main():
         df = load_data(conn, metadata, metric)
         df_zscore = load_ascore_atmp_data(conn, metadata, metric)
 
+    st.title("Buoy data dashboard")
     st.subheader(METRIC_NAMES[metric])
 
     print(df.head())
@@ -72,7 +71,8 @@ def main():
 
     st.plotly_chart(fig)
 
-    df_zscore[metric] = df_zscore[metric].round(2)
+    st.subheader("Deviation from expected value (z-score)")
+    df_zscore["z-score"] = df_zscore["z-score"].round(2)
     print(df_zscore.head())
 
     df_zscore["size"] = 10
@@ -80,7 +80,7 @@ def main():
         df_zscore,
         lat="lat",
         lon="lon",
-        color=metric,
+        color="z-score",
         opacity=0.5,
         color_continuous_scale="viridis",
         size="size",
