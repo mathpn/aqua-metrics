@@ -5,34 +5,33 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from sqlalchemy import MetaData, Table, create_engine, select
+from sqlalchemy.sql import functions as func
 
 st.title("Buoy data dashboard")
 
 
-def load_data(conn: sqlite3.Connection, metric: str):
-    df = pd.read_sql_query(
-        f"""
-        SELECT LAT, LON, {metric} 
-        FROM realtime_data
-        WHERE ingestion_ts = (SELECT MAX(ingestion_ts) FROM realtime_data)
-        AND {metric} IS NOT NULL
-        """,
-        conn,
+def load_data(conn, metadata, metric: str) -> pd.DataFrame:
+    realtime_table = Table("realtime_data", metadata, autoload_with=conn)
+
+    stmt = select(
+        realtime_table.c.LAT, realtime_table.c.LON, realtime_table.c[metric]
+    ).where(
+        realtime_table.c.ingestion_ts
+        == select(func.max(realtime_table.c.ingestion_ts)).scalar_subquery(),
+        realtime_table.c[metric] != None,
     )
-    return df
+    return pd.read_sql(stmt, conn)
 
 
-def load_ascore_atmp_data(conn: sqlite3.Connection, metric: str):
-    df = pd.read_sql_query(
-        f"""
-        SELECT lat, lon, {metric} 
-        FROM z_scores AS t1
-        JOIN stations AS t2
-        ON t1.station_code = t2.station_code
-        """,
-        conn,
-    )
-    return df
+def load_ascore_atmp_data(conn, metadata, metric: str) -> pd.DataFrame:
+    z_scores_table = Table("z_scores", metadata, autoload_with=conn)
+    station_table = Table("stations", metadata, autoload_with=conn)
+
+    stmt = select(
+        station_table.c.lat, station_table.c.lon, z_scores_table.c[metric]
+    ).join(station_table, z_scores_table.c.station_code == station_table.c.station_code)
+    return pd.read_sql(stmt, conn)
 
 
 METRIC_NAMES = {
@@ -44,15 +43,18 @@ METRIC_NAMES = {
 
 
 def main():
-    conn = sqlite3.connect("file:data/database.db?mode=ro", uri=True)
+    engine = create_engine("sqlite:///data/database.db")
+    metadata = MetaData()
 
     metric = st.selectbox("Choose a metric", METRIC_NAMES.keys(), index=1)
 
-    df = load_data(conn, metric)
-    print(df.sample(10))
+    with engine.connect() as conn:
+        df = load_data(conn, metadata, metric)
+        df_zscore = load_ascore_atmp_data(conn, metadata, metric)
 
     st.subheader(METRIC_NAMES[metric])
 
+    print(df.head())
     df["size"] = 10
     fig = px.scatter_mapbox(
         df,
@@ -70,9 +72,8 @@ def main():
 
     st.plotly_chart(fig)
 
-    df_zscore = load_ascore_atmp_data(conn, metric)
     df_zscore[metric] = df_zscore[metric].round(2)
-    print(df_zscore)
+    print(df_zscore.head())
 
     df_zscore["size"] = 10
     fig = px.scatter_mapbox(
