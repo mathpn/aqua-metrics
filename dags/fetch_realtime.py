@@ -61,8 +61,9 @@ def extract_latest_observations():
 
     df = df.with_columns([pl.lit(datetime.now()).alias("ingestion_ts")])
 
+    # TODO keep a history of realtime data?
     df.write_database(
-        table_name="realtime_data", connection=uri, if_table_exists="append"
+        table_name="temp_realtime_data", connection=uri, if_table_exists="replace"
     )
     return f"written dataframe with shape {df.shape} to database"
 
@@ -75,12 +76,26 @@ def extract_latest_observations():
     tags=["realtime"],
 )
 def fetch_realtime():
-    extract_latest_observations()
-    SQLExecuteQueryOperator(
+    extract_task = extract_latest_observations()
+    fill_station_task = SQLExecuteQueryOperator(
         task_id="fill_stations",
         sql="sql/insert_stations.sql",
         conn_id="aqua_metrics_sqlite",
     )
+    fill_latest_task = SQLExecuteQueryOperator(
+        task_id="fill_latest_realtime",
+        sql="sql/latest_realtime.sql",
+        conn_id="aqua_metrics_sqlite",
+        split_statements=True,
+        autocommit=False,
+    )
+    drop_temp_table = SQLExecuteQueryOperator(
+        task_id="drop_temp_realtime_table",
+        sql="DROP TABLE temp_realtime_data;",
+        conn_id="aqua_metrics_sqlite",
+    )
+
+    extract_task >> fill_station_task >> fill_latest_task >> drop_temp_table
 
 
 fetch_realtime()

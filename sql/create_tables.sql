@@ -12,3 +12,24 @@ CREATE TABLE IF NOT EXISTS z_scores (
     "PRES" FLOAT,
     "WVHT" FLOAT
 );
+
+CREATE TABLE realtime_data (
+    station_code TEXT,
+    "WDIR" BIGINT,
+    "WSPD" FLOAT,
+    "GST" FLOAT,
+    "WVHT" FLOAT,
+    "DPD" FLOAT,
+    "APD" FLOAT,
+    "MWD" FLOAT,
+    "PRES" FLOAT,
+    "PTDY" FLOAT,
+    "ATMP" FLOAT,
+    "WTMP" FLOAT,
+    "DEWP" FLOAT,
+    "VIS" FLOAT,
+    "TIDE" FLOAT,
+    timestamp DATETIME,
+    ingestion_ts DATETIME,
+    FOREIGN KEY(station_code) REFERENCES stations(station_code)
+);
