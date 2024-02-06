@@ -33,3 +33,24 @@ CREATE TABLE realtime_data (
     ingestion_ts DATETIME,
     FOREIGN KEY(station_code) REFERENCES stations(station_code)
 );
+
+CREATE TABLE latest_history (
+    station_code TEXT,
+    "WDIR" BIGINT,
+    "WSPD" FLOAT,
+    "GST" FLOAT,
+    "WVHT" FLOAT,
+    "DPD" FLOAT,
+    "APD" FLOAT,
+    "MWD" FLOAT,
+    "PRES" FLOAT,
+    "ATMP" FLOAT,
+    "WTMP" FLOAT,
+    "DEWP" FLOAT,
+    "VIS" FLOAT,
+    "PTDY" FLOAT,
+    "TIDE" FLOAT,
+    timestamp TEXT,
+    ingestion_ts DATETIME,
+    FOREIGN KEY(station_code) REFERENCES stations(station_code)
+);
