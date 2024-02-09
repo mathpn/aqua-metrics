@@ -9,6 +9,7 @@ from sqlalchemy.dialects.sqlite import insert
 from statsmodels.tsa.seasonal import STL
 
 
+# TODO define tables properly
 @task()
 def list_stations():
     uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
@@ -79,7 +80,6 @@ def fetch_history():
     stations = list_stations()
     calculate_atmp_zsore.expand(
         station=stations,
-        # station=["41009"],
         column=[
             "WSPD",
             "ATMP",
