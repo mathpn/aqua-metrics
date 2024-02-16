@@ -1,4 +1,7 @@
 *.log
 data/
 venv/
-
+dags/
+logs/
+config/
+plugins/
