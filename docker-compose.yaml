@@ -98,6 +98,21 @@ services:
       start_period: 5s
     restart: always
 
+  data_postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: aqua
+      POSTGRES_PASSWORD: password42
+      POSTGRES_DB: aqua_metrics
+    volumes:
+      - data-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "aqua_metrics", "-U", "aqua"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
   redis:
     image: redis:latest
     expose:
@@ -281,3 +296,4 @@ services:
 
 volumes:
   postgres-db-volume:
+  data-db-volume:
