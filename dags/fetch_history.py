@@ -7,13 +7,13 @@ import requests
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowSkipException
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.providers.sqlite.hooks.sqlite import SqliteHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from sqlalchemy import MetaData, Table, create_engine, select
 
 
 @task()
 def list_stations():
-    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    uri = PostgresHook(sqlite_conn_id="aqua_metrics_db").get_uri()
     engine = create_engine(uri)
 
     metadata = MetaData()
@@ -49,7 +49,7 @@ schema = {
 
 @task()
 def extract_history(station: str) -> None:
-    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    uri = PostgresHook(sqlite_conn_id="aqua_metrics_db").get_uri()
 
     res = requests.get(
         f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt", timeout=15
@@ -103,7 +103,7 @@ def fetch_history():
         sql="sql/latest_history.sql",
         split_statements=True,
         autocommit=False,
-        conn_id="aqua_metrics_sqlite",
+        conn_id="aqua_metrics_db",
         trigger_rule="all_done",
     )
 

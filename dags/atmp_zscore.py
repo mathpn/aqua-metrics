@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 from airflow.decorators import dag, task
-from airflow.providers.sqlite.hooks.sqlite import SqliteHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from scipy.stats import zscore
 from sqlalchemy import MetaData, Table, create_engine, distinct, select
 from sqlalchemy.dialects.sqlite import insert
@@ -12,7 +12,7 @@ from statsmodels.tsa.seasonal import STL
 # TODO define tables properly
 @task()
 def list_stations():
-    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    uri = PostgresHook(postgres_conn_id="aqua_metrics_db").get_uri()
     engine = create_engine(uri)
 
     metadata = MetaData()
@@ -25,7 +25,7 @@ def list_stations():
 
 @task()
 def calculate_atmp_zsore(station: str, column: str):
-    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    uri = PostgresHook(postgres_conn_id="aqua_metrics_db").get_uri()
     engine = create_engine(uri)
 
     metadata = MetaData()

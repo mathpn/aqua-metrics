@@ -6,7 +6,7 @@ import polars as pl
 import requests
 from airflow.decorators import dag, task
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.providers.sqlite.hooks.sqlite import SqliteHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 schema = {
     "STN": pl.String,
@@ -44,7 +44,7 @@ def extract_latest_observations():
     )
 
     buffer = StringIO(data)
-    uri = SqliteHook(sqlite_conn_id="aqua_metrics_sqlite").get_uri()
+    uri = PostgresHook(sqlite_conn_id="aqua_metrics_db").get_uri()
     print(uri)
 
     df = pl.read_csv(
@@ -80,19 +80,19 @@ def fetch_realtime():
     fill_station_task = SQLExecuteQueryOperator(
         task_id="fill_stations",
         sql="sql/insert_stations.sql",
-        conn_id="aqua_metrics_sqlite",
+        conn_id="aqua_metrics_db",
     )
     fill_latest_task = SQLExecuteQueryOperator(
         task_id="fill_latest_realtime",
         sql="sql/latest_realtime.sql",
-        conn_id="aqua_metrics_sqlite",
+        conn_id="aqua_metrics_db",
         split_statements=True,
         autocommit=False,
     )
     drop_temp_table = SQLExecuteQueryOperator(
         task_id="drop_temp_realtime_table",
         sql="DROP TABLE temp_realtime_data;",
-        conn_id="aqua_metrics_sqlite",
+        conn_id="aqua_metrics_db",
     )
 
     extract_task >> fill_station_task >> fill_latest_task >> drop_temp_table

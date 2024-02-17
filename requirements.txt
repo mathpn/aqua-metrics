@@ -3,4 +3,4 @@ requests==2.31.0
 SQLAlchemy==1.4.51
 pandas==2.0.3
 statsmodels==0.14.1
-
+apache-airflow-providers-postgres==5.10.1
