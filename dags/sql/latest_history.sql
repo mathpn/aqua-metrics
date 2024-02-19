@@ -1,5 +1,3 @@
-PRAGMA foreign_keys=ON;
-
 DELETE FROM latest_history;
 
 INSERT INTO latest_history (

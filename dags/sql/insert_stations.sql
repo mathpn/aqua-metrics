@@ -1,4 +1,4 @@
-INSERT OR IGNORE INTO stations (
+INSERT INTO stations (
     station_code,
     name,
     lat,
@@ -8,4 +8,5 @@ INSERT OR IGNORE INTO stations (
     'station_' || "STN",
     "LAT",
     "LON"
-FROM temp_realtime_data;
+FROM temp_realtime_data
+ON CONFLICT DO NOTHING;

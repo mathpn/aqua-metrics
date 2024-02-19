@@ -1,5 +1,3 @@
-PRAGMA foreign_keys=ON;
-
 INSERT INTO realtime_data (
     station_code,
     "WDIR",
