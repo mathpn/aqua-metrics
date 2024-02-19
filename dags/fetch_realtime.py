@@ -44,7 +44,7 @@ def extract_latest_observations():
     )
 
     buffer = StringIO(data)
-    uri = PostgresHook(sqlite_conn_id="aqua_metrics_db").get_uri()
+    uri = PostgresHook(postgres_conn_id="aqua_metrics_db").get_uri()
     print(uri)
 
     df = pl.read_csv(
