@@ -106,8 +106,8 @@ services:
       POSTGRES_PASSWORD: password42
       POSTGRES_DB: aqua_metrics
     volumes:
+      - ./sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
       - data-db-volume:/var/lib/postgresql/data
-      - ./sql:/docker-entrypoint-initdb.d/
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "aqua_metrics", "-U", "aqua"]
       interval: 10s
