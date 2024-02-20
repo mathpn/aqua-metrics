@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS z_scores (
     "WVHT" FLOAT
 );
 
-CREATE TABLE realtime_data (
+CREATE TABLE IF NOT EXISTS realtime_data (
     station_code TEXT,
     "WDIR" BIGINT,
     "WSPD" FLOAT,
@@ -29,12 +29,12 @@ CREATE TABLE realtime_data (
     "DEWP" FLOAT,
     "VIS" FLOAT,
     "TIDE" FLOAT,
-    timestamp DATETIME,
-    ingestion_ts DATETIME,
-    FOREIGN KEY(station_code) REFERENCES stations(station_code)
+    timestamp timestamp,
+    ingestion_ts timestamp,
+    CONSTRAINT fk_station FOREIGN KEY(station_code) REFERENCES stations(station_code)
 );
 
-CREATE TABLE latest_history (
+CREATE TABLE IF NOT EXISTS latest_history (
     station_code TEXT,
     "WDIR" BIGINT,
     "WSPD" FLOAT,
@@ -51,6 +51,6 @@ CREATE TABLE latest_history (
     "PTDY" FLOAT,
     "TIDE" FLOAT,
     timestamp TEXT,
-    ingestion_ts DATETIME,
-    FOREIGN KEY(station_code) REFERENCES stations(station_code)
+    ingestion_ts timestamp,
+    CONSTRAINT fk_station FOREIGN KEY(station_code) REFERENCES stations(station_code)
 );
