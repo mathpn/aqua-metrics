@@ -13,7 +13,7 @@ from sqlalchemy import MetaData, Table, create_engine, select
 
 @task()
 def list_stations():
-    uri = PostgresHook(sqlite_conn_id="aqua_metrics_db").get_uri()
+    uri = PostgresHook(postgres_conn_id="aqua_metrics_db").get_uri()
     engine = create_engine(uri)
 
     metadata = MetaData()
@@ -49,7 +49,7 @@ schema = {
 
 @task()
 def extract_history(station: str) -> None:
-    uri = PostgresHook(sqlite_conn_id="aqua_metrics_db").get_uri()
+    uri = PostgresHook(postgres_conn_id="aqua_metrics_db").get_uri()
 
     res = requests.get(
         f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt", timeout=15
@@ -96,7 +96,7 @@ def extract_history(station: str) -> None:
 )
 def fetch_history():
     stations = list_stations()
-    extract = extract_history.expand(station=stations)
+    extract = extract_history.expand(station=["42055"])
 
     latest_history = SQLExecuteQueryOperator(
         task_id="latest_history",
