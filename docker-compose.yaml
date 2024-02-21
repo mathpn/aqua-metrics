@@ -82,6 +82,8 @@ x-airflow-common:
       condition: service_healthy
     postgres:
       condition: service_healthy
+    data-postgres:
+      condition: service_healthy
 
 services:
   postgres:
@@ -295,6 +297,21 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  streamlit:
+    build: dashboard/
+    ports:
+      - "8501:8501"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      data-postgres:
+        condition: service_healthy
 
 volumes:
   postgres-db-volume:
