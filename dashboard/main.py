@@ -27,7 +27,9 @@ def load_ascore_atmp_data(conn, metadata, metric: str) -> pd.DataFrame:
     station_table = Table("stations", metadata, autoload_with=conn)
 
     stmt = select(
-        station_table.c.lat, station_table.c.lon, z_scores_table.c[metric].label("z-score")
+        station_table.c.lat,
+        station_table.c.lon,
+        z_scores_table.c[metric].label("z-score"),
     ).join(station_table, z_scores_table.c.station_code == station_table.c.station_code)
     return pd.read_sql(stmt, conn)
 
