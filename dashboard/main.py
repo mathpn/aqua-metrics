@@ -43,7 +43,9 @@ METRIC_NAMES = {
 
 
 def main():
-    engine = create_engine("sqlite:///data/database.db")
+    engine = create_engine(
+        "postgresql+psycopg2://aqua:password42@data-postgres/aqua_metrics"
+    )
     metadata = MetaData()
 
     metric = st.selectbox("Choose a metric", METRIC_NAMES.keys(), index=1)
