@@ -96,7 +96,7 @@ def extract_history(station: str) -> None:
 )
 def fetch_history():
     stations = list_stations()
-    extract = extract_history.expand(station=["42055"])
+    extract = extract_history.expand(station=stations)
 
     latest_history = SQLExecuteQueryOperator(
         task_id="latest_history",
