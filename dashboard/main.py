@@ -11,13 +11,18 @@ from sqlalchemy.sql import functions as func
 
 def load_data(conn, metadata, metric: str) -> pd.DataFrame:
     realtime_table = Table("realtime_data", metadata, autoload_with=conn)
+    station_table = Table("stations", metadata, autoload_with=conn)
 
-    stmt = select(
-        realtime_table.c.LAT, realtime_table.c.LON, realtime_table.c[metric]
-    ).where(
-        realtime_table.c.ingestion_ts
-        == select(func.max(realtime_table.c.ingestion_ts)).scalar_subquery(),
-        realtime_table.c[metric] != None,
+    stmt = (
+        select(station_table.c.lat, station_table.c.lon, realtime_table.c[metric])
+        .join(
+            station_table, realtime_table.c.station_code == station_table.c.station_code
+        )
+        .where(
+            realtime_table.c.ingestion_ts
+            == select(func.max(realtime_table.c.ingestion_ts)).scalar_subquery(),
+            realtime_table.c[metric] != None,
+        )
     )
     return pd.read_sql(stmt, conn)
 
@@ -61,8 +66,8 @@ def main():
     df["size"] = 10
     fig = px.scatter_mapbox(
         df,
-        lat="LAT",
-        lon="LON",
+        lat="lat",
+        lon="lon",
         color=metric,
         opacity=0.5,
         color_continuous_scale="viridis",
