@@ -54,7 +54,6 @@ def extract_history(station: str) -> None:
     res = requests.get(
         f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt", timeout=15
     )
-    # TODO refactor to function
     data = res.content.decode("utf-8")
 
     if data.startswith("<!DOCTYPE HTML"):
@@ -78,7 +77,6 @@ def extract_history(station: str) -> None:
         [pl.datetime("YY", "MM", "DD", "hh", "mm", 0).alias("timestamp").cast(pl.Utf8)]
     ).drop(["YY", "MM", "DD", "hh", "mm"])
 
-    # TODO foreign key
     df = df.with_columns([pl.lit(datetime.now()).alias("ingestion_ts")])
     df = df.with_columns([pl.lit(station).alias("station_code")])
 
