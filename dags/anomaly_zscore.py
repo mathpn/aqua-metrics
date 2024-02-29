@@ -9,7 +9,6 @@ from sqlalchemy.dialects.sqlite import insert
 from statsmodels.tsa.seasonal import STL
 
 
-# TODO define tables properly
 @task()
 def list_stations():
     uri = PostgresHook(postgres_conn_id="aqua_metrics_db").get_uri()
@@ -24,7 +23,7 @@ def list_stations():
 
 
 @task()
-def calculate_atmp_zsore(station: str, column: str):
+def calculate_zsore(station: str, column: str):
     uri = PostgresHook(postgres_conn_id="aqua_metrics_db").get_uri()
     engine = create_engine(uri)
 
@@ -70,7 +69,7 @@ def calculate_atmp_zsore(station: str, column: str):
 
 
 @dag(
-    dag_id="atmp_zscore",
+    dag_id="anomaly_zscore",
     start_date=datetime(2024, 1, 1),
     catchup=False,
     schedule=timedelta(hours=6),
@@ -78,7 +77,7 @@ def calculate_atmp_zsore(station: str, column: str):
 )
 def fetch_history():
     stations = list_stations()
-    calculate_atmp_zsore.expand(
+    calculate_zsore.expand(
         station=stations,
         column=[
             "WSPD",
