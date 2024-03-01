@@ -9,7 +9,7 @@ Apache Airflow is used to orchestrate the required workflows. The project utiliz
 - Real-time data for all stations
 - Historical data (last 45 days) for each station
 
-Accesible via the NDBC website, these datasets are managed by two PostgreSQL instances. One serves as the database backend for Airflow, while the other stores all extracted data. Upon initiating the PostgreSQL Docker (details in [create_tables.sql](./sql/create_tables.sql)), the necessary tables are created.
+Accessible via the NDBC website, these datasets are managed by two PostgreSQL instances. One serves as the database backend for Airflow, while the other stores all extracted data. Upon initiating the PostgreSQL Docker (details in [create_tables.sql](./sql/create_tables.sql)), the necessary tables are created.
 
 There are three DAGs, namely:
 
@@ -36,4 +36,3 @@ docker compose rm && docker compose up --build
 ## Running without Docker
 
 For those preferring a virtual Python environment, install all requirements. Note that Apache Airflow is _not in the requirements file_ since the Airflow Docker image is used and _must be installed separately_.
-
